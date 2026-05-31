@@ -152,6 +152,14 @@ body{
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   border: 4px solid #fff;
   outline: 1px solid var(--r1, #fae8ee);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.galeri-item:hover {
+  transform: scale(1.01);
+  box-shadow: 0 8px 24px rgba(168,78,110,0.12);
 }
 
 .galeri-item img {
@@ -163,7 +171,136 @@ body{
 }
 
 .galeri-item:hover img {
-  transform: scale(1.05);
+  transform: scale(1.04);
+}
+
+/* Overlay hint di setiap foto */
+.galeri-item::after {
+  content: '🔍';
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  font-size: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
+}
+.galeri-item:hover::after {
+  opacity: 1;
+}
+
+/* ── LIGHTBOX ── */
+#galeriLightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(5,3,8,0.96);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+#galeriLightbox.active {
+  display: flex;
+  opacity: 1;
+}
+#lbImgWrap {
+  position: relative;
+  max-width: 94vw;
+  max-height: 82vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#lbImg {
+  max-width: 94vw;
+  max-height: 80vh;
+  border-radius: 6px;
+  object-fit: contain;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(232,160,176,0.08);
+  transform: scale(0.88);
+  opacity: 0;
+  transition: transform 0.45s cubic-bezier(.16,1,.3,1), opacity 0.35s ease;
+}
+#galeriLightbox.active #lbImg {
+  transform: scale(1);
+  opacity: 1;
+}
+/* Counter */
+#lbCounter {
+  margin-top: 16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 0.88rem;
+  color: rgba(232,160,176,0.5);
+  letter-spacing: 0.12em;
+  transition: opacity 0.2s;
+}
+/* Tombol navigasi */
+.lb-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(232,160,176,0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(232,160,176,0.7);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100001;
+  transition: background 0.2s, transform 0.2s;
+  user-select: none;
+}
+.lb-nav:hover {
+  background: rgba(255,255,255,0.14);
+  transform: translateY(-50%) scale(1.08);
+}
+#lbPrev { left: 12px; }
+#lbNext { right: 12px; }
+/* Tombol close lightbox */
+#lbClose {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(232,160,176,0.2);
+  color: rgba(232,160,176,0.7);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100001;
+  transition: background 0.2s, transform 0.2s;
+}
+#lbClose:hover {
+  background: rgba(255,255,255,0.15);
+  transform: scale(1.1);
+}
+/* Swipe hint */
+#lbSwipeHint {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.58rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(232,160,176,0.25);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 /* Styling Default Kursor Custom (Untuk PC) */
@@ -1103,17 +1240,55 @@ body{
 }
 
 /* ════════════════════════════════
-   TRANSITIONS
+   TRANSITIONS — CINEMATIC
 ════════════════════════════════ */
-.scene-in{animation:scIn .7s cubic-bezier(.4,0,.2,1) forwards}
-.scene-out{animation:scOut .42s ease forwards}
-@keyframes scIn{
-  from{opacity:0;transform:translateY(28px) scale(.98)}
-  to{opacity:1;transform:translateY(0) scale(1)}
+
+/* Base */
+.scene{will-change:opacity,transform}
+
+/* ── Unused class stubs (animasi diset via inline style) ── */
+.scene-out-fwd,.scene-out-bwd,.scene-in-fwd,.scene-in-bwd{}
+
+/* FORWARD: lama → naik & fade out */
+@keyframes scOutFwd{
+  0%  {opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-28px) scale(.96)}
 }
-@keyframes scOut{
-  from{opacity:1;transform:translateY(0) scale(1)}
-  to{opacity:0;transform:translateY(-20px) scale(.99)}
+/* FORWARD: baru → naik dari bawah */
+@keyframes scInFwd{
+  0%  {opacity:0;transform:translateY(36px) scale(.97)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* BACKWARD: lama → turun & fade out */
+@keyframes scOutBwd{
+  0%  {opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(28px) scale(.96)}
+}
+/* BACKWARD: baru → dari atas */
+@keyframes scInBwd{
+  0%  {opacity:0;transform:translateY(-36px) scale(.97)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Scene 0 → 1: zoom out pelan */
+@keyframes scOutIntro{
+  0%  {opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.05)}
+}
+@keyframes scInFromGift{
+  0%  {opacity:0;transform:scale(.95) translateY(24px)}
+  100%{opacity:1;transform:scale(1) translateY(0)}
+}
+
+/* Scene → 7: paling mellow, fade gentle */
+@keyframes scOutToFinal{
+  0%  {opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.03)}
+}
+@keyframes scInFinal{
+  0%  {opacity:0;transform:scale(.98)}
+  100%{opacity:1;transform:scale(1)}
 }
 
 /* ── PETALS ── */
@@ -1343,6 +1518,232 @@ body{
 }
 .shake { animation: shakeError 0.5s ease; }
 
+/* ════════════════════════════════
+   POLAROID FLIP CARD (Scene 7)
+════════════════════════════════ */
+
+/* Overlay gelap saat foto diklik */
+#polFlipOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: rgba(8, 5, 9, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+#polFlipOverlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+/* Container flip card */
+#polFlipCard {
+  width: min(300px, 88vw);
+  perspective: 1200px;
+  position: relative;
+  cursor: pointer;
+  /* tinggi dinamis mengikuti konten */
+}
+
+/* Inner yang berputar */
+#polFlipInner {
+  width: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.75s cubic-bezier(0.34, 1.2, 0.64, 1);
+  /* pakai grid trick: kedua sisi stack di posisi sama, height = max keduanya */
+  display: grid;
+}
+#polFlipCard.flipped #polFlipInner {
+  transform: rotateY(180deg);
+}
+
+/* Sisi Depan & Belakang — sama-sama di grid cell 1/1 */
+.flip-front, .flip-back {
+  grid-area: 1 / 1;
+  border-radius: 4px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  width: 100%;
+}
+
+/* Sisi Depan (foto) */
+.flip-front {
+  background: #fff;
+  padding: 12px 12px 36px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 2px 10px rgba(201,107,136,0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: min(340px, 82vw);
+}
+.flip-front img {
+  width: 100%;
+  flex: 1;
+  min-height: 200px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+.flip-front .flip-cap {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #2d1f25;
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* Sisi Belakang (pesan rahasia) — scrollable */
+.flip-back {
+  background: linear-gradient(145deg, #fdf0f5, #fae0ea);
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 28px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 2px 10px rgba(201,107,136,0.2);
+  border: 1px solid rgba(201,107,136,0.2);
+  position: relative;
+  overflow: hidden; /* clip dekorasi bg */
+  min-height: min(340px, 82vw);
+}
+.flip-back::before {
+  content: '♡';
+  position: absolute;
+  font-size: 120px;
+  color: rgba(201,107,136,0.05);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+  font-family: serif;
+}
+.flip-back-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(168,78,110,0.5);
+  margin-bottom: 14px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Area scroll pesan */
+.flip-back-scroll {
+  width: 100%;
+  max-height: 55vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 1;
+  /* scrollbar tipis cantik */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,107,136,0.3) transparent;
+  /* stop event scroll agar tidak trigger scene navigation */
+  touch-action: pan-y;
+}
+.flip-back-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.flip-back-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.flip-back-scroll::-webkit-scrollbar-thumb {
+  background: rgba(201,107,136,0.3);
+  border-radius: 10px;
+}
+
+.flip-back-msg {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: clamp(1rem, 4vw, 1.2rem);
+  font-weight: 400;
+  color: var(--r6, #a84e6e);
+  text-align: center;
+  line-height: 1.8;
+  padding: 4px 4px 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.flip-back-deco {
+  margin-top: 14px;
+  font-size: 1.4rem;
+  opacity: 0.5;
+  animation: monoPulse 2.5s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+/* Tombol X / Close */
+#polFlipClose {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(232,160,176,0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--r2, #f0c5d2);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5001;
+  transition: background 0.3s, transform 0.2s;
+  line-height: 1;
+}
+#polFlipClose:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.1);
+}
+
+/* Hint tap to flip */
+#polFlipHint {
+  position: absolute;
+  bottom: -38px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(232,160,176,0.4);
+  white-space: nowrap;
+  animation: pls 2s ease-in-out infinite;
+}
+
+/* Glowing border animasi saat hover polaroid di scene 7 */
+.pol {
+  cursor: pointer !important;
+}
+.pol:hover .pol-img {
+  box-shadow: 0 0 0 2px rgba(201,107,136,0.5), 0 12px 30px rgba(201,107,136,0.3) !important;
+}
+
+/* Animasi masuk overlay */
+@keyframes overlayCardIn {
+  from { transform: scale(0.75) translateY(30px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+#polFlipCard {
+  animation: overlayCardIn 0.45s cubic-bezier(0.34,1.5,0.64,1) both;
+}
+
 </style>
 </head>
 <body>
@@ -1392,32 +1793,44 @@ body{
     <p class="galeri-subtitle">Setiap detik bersamamu adalah momen favoritku.</p>
     
     <div class="galeri-grid">
-      <div class="galeri-item">
+      <div class="galeri-item" onclick="openLightbox(0)">
         <img src="foto1.jpg" alt="Memori 1">
       </div>
-      <div class="galeri-item">
+      <div class="galeri-item" onclick="openLightbox(1)">
         <img src="foto2.jpg" alt="Memori 2">
       </div>
-      <div class="galeri-item">
+      <div class="galeri-item" onclick="openLightbox(2)">
         <img src="foto3.jpg" alt="Memori 3">
       </div>
-      <div class="galeri-item">
+      <div class="galeri-item" onclick="openLightbox(3)">
         <img src="foto4.jpg" alt="Memori 4">
       </div>
-      <div class="galeri-item">
+      <div class="galeri-item" onclick="openLightbox(4)">
         <img src="foto5.jpg" alt="Memori 5">
       </div>
-      <div class="galeri-item">
+      <div class="galeri-item" onclick="openLightbox(5)">
         <img src="foto6.jpg" alt="Memori 6">
       </div>
-      <div class="galeri-item">
+      <div class="galeri-item" onclick="openLightbox(6)">
         <img src="foto7.jpg" alt="Memori 7">
       </div>
-      <div class="galeri-item">
+      <div class="galeri-item" onclick="openLightbox(7)">
         <img src="foto8.jpg" alt="Memori 8">
       </div>
     </div>
   </div>
+</div>
+
+<!-- ═══ LIGHTBOX ═══ -->
+<div id="galeriLightbox" onclick="lbBgClick(event)">
+  <button id="lbClose" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav" id="lbPrev" onclick="lbNav(-1)">‹</button>
+  <button class="lb-nav" id="lbNext" onclick="lbNav(1)">›</button>
+  <div id="lbImgWrap">
+    <img id="lbImg" src="" alt="Memory">
+  </div>
+  <div id="lbCounter">1 / 8</div>
+  <div id="lbSwipeHint">← geser untuk ganti foto →</div>
 </div>
 
 
@@ -1688,7 +2101,7 @@ body{
     <div class="aurora-band ab3"></div>
   </div>
   <div class="s5-inner">
-    <div class="pol" id="pol">
+    <div class="pol" id="pol" role="button" tabindex="0" aria-label="Ketuk foto untuk buka pesan rahasia" onclick="openPolFlip(event)">
       <div class="pol-img">
         <img src="foto.jpg" alt="Memory"
           onerror="this.style.display='none';this.parentElement.innerHTML+='<div class=\'no-photo\'>kenangan yang<br>tersimpan rapi<br>di hati</div>'">
@@ -1704,16 +2117,65 @@ body{
 
 <audio id="aud" src="lagu.mp3" loop></audio>
 
+<!-- ═══ POLAROID FLIP OVERLAY ═══ -->
+<div id="polFlipOverlay">
+  <button id="polFlipClose" onclick="closePolFlip()" aria-label="Tutup">✕</button>
+  <div id="polFlipCard" onclick="togglePolFlip()">
+    <div id="polFlipInner">
+      <!-- Sisi Depan -->
+      <div class="flip-front">
+        <img src="foto.jpg" alt="Memory"
+          onerror="this.style.display='none';this.parentElement.style.justifyContent='center';this.parentElement.innerHTML+='<div style=\'font-family:Cormorant Garamond,serif;font-style:italic;font-size:.9rem;color:rgba(168,78,110,.5);text-align:center;padding:20px;line-height:1.7;\'>kenangan yang<br>tersimpan rapi<br>di hati ♡</div>'">
+        <div class="flip-cap">I miss u. 🤍<br><span style="font-size:.72rem;opacity:.55"></span></div>
+      </div>
+      <!-- Sisi Belakang -->
+      <div class="flip-back">
+        <div class="flip-back-label">✦ secret message ✦</div>
+        <div class="flip-back-scroll" onclick="event.stopPropagation()">
+          <div class="flip-back-msg" id="polSecretMsg">
+            Haiii, makasii yaa masih dibuka webbnyaa pasti kaget 
+            tiba-tiba bisa dibalik fotonya hehe,
+            mungkin kemarin terakhir kali aku bakalan chat kamu lagi karena
+            diliat-liat juga kayaknya kamu udah ga mau yaa sama akuu udah 
+            ga ada rasa hehehe,<br> tapi gapapa mungkin karena kamu juga bakalan 
+            memulai hidup baru di kampus nanti jadi ga akan kesepian lagi udah
+            banyak temen dan bisa cari cowo lain lagi di sana wkwkwkwk,<br>
+            makannya udah ga butuh aku lagi tapii gapapa aku udah lega bisa
+            mengutarakan isi hati aku, aku juga harus berusaha move one dari sekarang.<br>
+            Makasii yaa buat semuanya selama 3 tahun ini, selama kita putus
+            kamu hampir tiap hari lhoo hadir dimimpiku entah kenapa wkwkwkwkw.<br>
+            aku ga tau kamu bakal liat ini apa engga
+            tapi yang pasti kamu tau betapa berartinya kamu buat aku. 🤍<br>
+            "and i know i have spent every life before this one searching for you,
+            not someone like you, but you,
+            for your soul and mine must always come together."
+        
+          </div>
+        </div>
+        <div class="flip-back-deco">♡</div>
+      </div>
+    </div>
+    <span id="polFlipHint">tap untuk balik foto</span>
+  </div>
+</div>
+
 <script>
 document.addEventListener('click', (e) => {
   const heart = document.createElement('span');
   heart.className = 'click-heart';
-  heart.innerHTML = '❤️'; // Bisa ganti jadi 🌸 atau ✨
+  heart.innerHTML = '❤️';
   heart.style.left = (e.clientX - 10) + 'px';
   heart.style.top = (e.clientY - 10) + 'px';
   document.body.appendChild(heart);
   setTimeout(() => heart.remove(), 1000);
 });
+
+/* ══════════════════════════════
+   HAPTIC HELPER (global, deklarasi awal)
+══════════════════════════════ */
+function vibe(pattern){
+  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
+}
 
 // === LOGIKA UNTUK MENAMPILKAN DAN MENUTUP MODAL GALERI ===
 function bukaGaleriRahasia() {
@@ -1974,39 +2436,77 @@ function navGo(n){
 }
 
 /* ══════════════════════════════
-   TRANSITIONS
+   TRANSITIONS — CINEMATIC
 ══════════════════════════════ */
 function goTo(n){
   if(n===step)return;
   const prev=document.getElementById(scenes[step]);
   const next=document.getElementById(scenes[n]);
-  prev.classList.add('scene-out');
+  const forward = n > step;
+
+  /* Durasi — cukup panjang biar smooth, jangan terlalu cepat */
+  const OUT_DUR = step===0 ? 500 : n===7 ? 520 : 480;
+  const IN_DUR  = n===7 ? 860 : 640;
+
+  /* Tentukan keyframe */
+  let outAnim, inAnim;
+  if(step===0){
+    outAnim = `scOutIntro ${OUT_DUR}ms cubic-bezier(.4,0,.6,1) both`;
+    inAnim  = `scInFromGift ${IN_DUR}ms cubic-bezier(.16,1,.3,1) both`;
+  } else if(n===7){
+    outAnim = `scOutToFinal ${OUT_DUR}ms cubic-bezier(.4,0,.6,1) both`;
+    inAnim  = `scInFinal ${IN_DUR}ms cubic-bezier(.16,1,.3,1) both`;
+  } else {
+    outAnim = forward
+      ? `scOutFwd ${OUT_DUR}ms cubic-bezier(.4,0,.6,1) both`
+      : `scOutBwd ${OUT_DUR}ms cubic-bezier(.4,0,.6,1) both`;
+    inAnim = forward
+      ? `scInFwd ${IN_DUR}ms cubic-bezier(.16,1,.3,1) both`
+      : `scInBwd ${IN_DUR}ms cubic-bezier(.16,1,.3,1) both`;
+  }
+
+  /* ── FASE 1: scene lama animasi keluar ── */
+  prev.style.pointerEvents = 'none';
+  prev.style.animation = 'none';
+  void prev.offsetWidth; // reflow paksa agar animasi mulai dari awal
+  prev.style.animation = outAnim;
+
+  /* ── FASE 2: tunggu OUT_DUR penuh, baru tampilkan scene baru ── */
   setTimeout(()=>{
-    prev.classList.remove('active','scene-out');
-    step=n;
-    next.classList.add('active','scene-in');
-    setTimeout(()=>next.classList.remove('scene-in'),750);
+    prev.classList.remove('active');
+    prev.style.animation = '';
+    prev.style.pointerEvents = '';
+
+    step = n;
+
+    /* Reset animasi next scene dulu, baru trigger */
+    next.style.animation = 'none';
+    void next.offsetWidth; // reflow — wajib agar inAnim jalan dari frame 0
+    next.classList.add('active');
+    next.style.animation = inAnim;
+
+    /* Bersihkan setelah animasi masuk selesai */
+    setTimeout(()=>{ next.style.animation = ''; }, IN_DUR + 80);
+
     updateNav(n);
     document.getElementById('abtn').classList.add('on');
+    vibe(n===7 ? [30,20,30,20,60] : n===1 ? 40 : 18);
 
     if(n===7){
       tryPlay();
       startPetals();
       revealFinalWords();
-      
       confetti({
         particleCount: 150,
         spread: 70,
         origin: { y: 0.6 },
         colors: ['#e8a0b0', '#c96b88', '#f0c5d2']
       });
-
-      // Muncul setelah jeda 2 detik biar dramatis
       setTimeout(() => {
         document.getElementById('secretMemoriesBtn').style.display = 'block';
-      }, 2000); 
+      }, 2000);
     }
-  },420);
+  }, OUT_DUR);
 }
 
 /* ══════════════════════════════
@@ -2099,6 +2599,7 @@ function spawnSmoke(flameEl) {
 function extinguishFlame(idx) {
   const f = document.getElementById(FLAME_IDS[idx]);
   if (!f || f.classList.contains('out')) return false;
+  vibe(25);
   spawnSmoke(f);
   f.classList.add('out');
   candlesOut++;
@@ -2109,6 +2610,7 @@ function allCandlesOut() {
   if (candlesDone) return;
   candlesDone = true;
   stopMic();
+  vibe([40,20,40,20,80]);
 
   const amb = document.querySelector('.cake-ambient');
   if (amb) { amb.style.opacity = '0'; }
@@ -2436,7 +2938,81 @@ ks.textContent=`
 document.head.appendChild(ks);
 
 /* ══ SCENE 7 ══ */
-document.getElementById('pol').addEventListener('click',tryPlay);
+document.getElementById('pol').addEventListener('click', function(e) {
+  // Hanya tryPlay jika bukan dari openPolFlip (sudah dihandle openPolFlip)
+  tryPlay();
+});
+
+/* ══ POLAROID FLIP CARD FUNCTIONS ══ */
+let polIsFlipped = false;
+
+function openPolFlip(e) {
+  e.stopPropagation();
+  tryPlay();
+
+  const overlay = document.getElementById('polFlipOverlay');
+  const card = document.getElementById('polFlipCard');
+
+  // Reset flip state
+  polIsFlipped = false;
+  card.classList.remove('flipped');
+  document.getElementById('polFlipHint').textContent = 'tap untuk balik foto';
+
+  // Animasi masuk ulang tiap buka
+  card.style.animation = 'none';
+  void card.offsetWidth; // reflow
+  card.style.animation = 'overlayCardIn 0.45s cubic-bezier(0.34,1.5,0.64,1) both';
+
+  overlay.style.display = 'flex';
+  requestAnimationFrame(() => {
+    overlay.classList.add('active');
+  });
+
+  // Cegah scroll background
+  document.body.style.overflow = 'hidden';
+}
+
+function togglePolFlip() {
+  const card = document.getElementById('polFlipCard');
+  const hint = document.getElementById('polFlipHint');
+
+  polIsFlipped = !polIsFlipped;
+  card.classList.toggle('flipped', polIsFlipped);
+  vibe(polIsFlipped ? [20,10,35] : 12);
+
+  if (polIsFlipped) {
+    hint.textContent = 'tap lagi untuk balik ke depan';
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 25, spread: 45, origin: { y: 0.55 }, colors: ['#f0c5d2','#c96b88','#e8a0b0'] });
+    }
+  } else {
+    hint.textContent = 'tap untuk balik foto';
+  }
+}
+
+function closePolFlip() {
+  const overlay = document.getElementById('polFlipOverlay');
+  overlay.classList.remove('active');
+  document.getElementById('polFlipCard').classList.remove('flipped');
+  polIsFlipped = false;
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 400);
+  document.body.style.overflow = '';
+}
+
+// Tutup overlay jika klik di luar card
+document.getElementById('polFlipOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closePolFlip();
+});
+
+// Cegah scroll di dalam flip-back-scroll agar tidak trigger scene swipe
+document.addEventListener('touchmove', function(e) {
+  const scrollEl = document.querySelector('.flip-back-scroll');
+  if (scrollEl && scrollEl.contains(e.target)) {
+    e.stopPropagation();
+  }
+}, { passive: true });
 
 const secretMessages = [
   "Jujur, aku kangen banget bgt. ",
@@ -2482,6 +3058,7 @@ function startFloatingLetters() {
 
 function openMiniLetter(el) {
   el.remove();
+  vibe([10,10,25]);
   if(typeof confetti === 'function') confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 }});
 
   const modal = document.getElementById('miniLetterModal');
@@ -2614,6 +3191,102 @@ window.addEventListener("focus", () => {
     document.title = docTitle;
   }, 2000);
 });
+
+/* ══════════════════════════════
+   LIGHTBOX — GALERI FOTO
+══════════════════════════════ */
+const lbSrcs = [
+  'foto1.jpg','foto2.jpg','foto3.jpg','foto4.jpg',
+  'foto5.jpg','foto6.jpg','foto7.jpg','foto8.jpg'
+];
+let lbIndex = 0;
+let lbTouchStartX = 0;
+
+function openLightbox(idx) {
+  lbIndex = idx;
+  const lb = document.getElementById('galeriLightbox');
+  const img = document.getElementById('lbImg');
+  img.src = lbSrcs[lbIndex];
+  updateLbCounter();
+  lb.style.display = 'flex';
+  requestAnimationFrame(() => lb.classList.add('active'));
+  vibe(15);
+  // Tutup galeriModal scroll agar tidak overlap
+  document.getElementById('galeriModal').style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  const lb = document.getElementById('galeriLightbox');
+  lb.classList.remove('active');
+  setTimeout(() => {
+    lb.style.display = 'none';
+    document.getElementById('lbImg').src = '';
+  }, 350);
+  document.getElementById('galeriModal').style.overflow = 'auto';
+  vibe(10);
+}
+
+function lbBgClick(e) {
+  if(e.target === document.getElementById('galeriLightbox')) closeLightbox();
+}
+
+function lbNav(dir) {
+  const img = document.getElementById('lbImg');
+  // Fade out
+  img.style.opacity = '0';
+  img.style.transform = `scale(0.92) translateX(${dir * -30}px)`;
+  vibe(12);
+  setTimeout(() => {
+    lbIndex = (lbIndex + dir + lbSrcs.length) % lbSrcs.length;
+    img.src = lbSrcs[lbIndex];
+    updateLbCounter();
+    img.style.transform = `scale(0.92) translateX(${dir * 30}px)`;
+    requestAnimationFrame(() => {
+      img.style.transition = 'transform 0.38s cubic-bezier(.16,1,.3,1), opacity 0.3s ease';
+      img.style.opacity = '1';
+      img.style.transform = 'scale(1) translateX(0)';
+    });
+  }, 180);
+}
+
+function updateLbCounter() {
+  document.getElementById('lbCounter').textContent = `${lbIndex + 1} / ${lbSrcs.length}`;
+}
+
+// Keyboard nav untuk lightbox
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('galeriLightbox').classList.contains('active')) return;
+  if(e.key === 'ArrowLeft') lbNav(-1);
+  if(e.key === 'ArrowRight') lbNav(1);
+  if(e.key === 'Escape') closeLightbox();
+});
+
+// Swipe touch untuk lightbox
+document.getElementById('galeriLightbox').addEventListener('touchstart', e => {
+  lbTouchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+document.getElementById('galeriLightbox').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - lbTouchStartX;
+  if(Math.abs(dx) > 45) lbNav(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+/* ══ Haptic tambahan di momen kunci yang sudah ada ══ */
+
+// Kado dibuka
+gBox.addEventListener('click', function(){
+  vibe([20, 30, 40]);
+});
+
+// Amplop dibuka
+document.getElementById('envWrap').addEventListener('click', function(){
+  if(!envOpen) vibe([15,10,30]);
+});
+
+// Scene 7 masuk
+setTimeout(() => {
+  if(step === 7) vibe([30,20,30,20,60]);
+}, 100);
 </script>
 </body>
 </html>
